@@ -4,6 +4,7 @@ import java.io.Serializable
 import java.time.LocalDateTime
 import java.util.*
 import com.fasterxml.jackson.annotation.JsonBackReference
+import com.kawanansemut.semutut.utility.U
 import org.hibernate.annotations.NaturalId
 import javax.persistence.*
 
@@ -17,7 +18,7 @@ open class Base : Serializable {
 
     @NaturalId
     @Column(unique = true)
-    var uuid: String = UUID.randomUUID().toString().replace("-", "")
+    var uuid: String = U.minUUID()
 
     @JsonBackReference
     var deleted: Boolean = false
