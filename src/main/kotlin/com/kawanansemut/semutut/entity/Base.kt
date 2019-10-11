@@ -13,14 +13,12 @@ import javax.persistence.*
 open class Base : Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonBackReference
     val id: Long = 0L
 
     @NaturalId
-    @Column(unique = true)
+    @Column(unique = true,length = 32)
     var uuid: String = U.minUUID()
 
-    @JsonBackReference
     var deleted: Boolean = false
 
     @Basic
