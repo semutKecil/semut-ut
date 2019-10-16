@@ -10,7 +10,7 @@ import javax.persistence.*
 @MappedSuperclass
 open class Base : Serializable {
     @Id
-    val id: Long = U.snowFlakeContainer.nextId()
+    val id: Long = U.idGenerator.nextId()
 
     @Basic
     var updated: LocalDateTime = LocalDateTime.now()
