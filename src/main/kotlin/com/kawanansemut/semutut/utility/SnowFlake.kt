@@ -6,8 +6,17 @@ package com.kawanansemut.semutut.utility
  * @author beyond
  * @date 2016/11/26
  */
+
+class SnowflakeContainer {
+    var snowFlake = SnowFlake(1,1,System.currentTimeMillis())
+}
+
 class SnowFlake(val datacenterId: Long,  //数据中心
-                val machineId: Long     //机器标识
+                val machineId: Long, //机器标识
+                /**
+                 * 起始的时间戳
+                 */
+                val START_STMP:Long = 1480166465631L
 ) {
     private var sequence = 0L //序列号
     private var lastStmp = -1L//上一次时间戳
@@ -64,11 +73,6 @@ class SnowFlake(val datacenterId: Long,  //数据中心
     }
 
     companion object {
-
-        /**
-         * 起始的时间戳
-         */
-        const val START_STMP = 1480166465631L
 
         /**
          * 每一部分占用的位数

@@ -10,14 +10,7 @@ import javax.persistence.*
 @MappedSuperclass
 open class Base : Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0L
-
-    @NaturalId
-    @Column(unique = true,length = 32)
-    var uuid: String = U.minUUID()
-
-    var deleted: Boolean = false
+    val id: Long = U.snowFlakeContainer.generateId()
 
     @Basic
     var updated: LocalDateTime = LocalDateTime.now()
@@ -36,3 +29,4 @@ open class Base : Serializable {
         updated = created
     }
 }
+
