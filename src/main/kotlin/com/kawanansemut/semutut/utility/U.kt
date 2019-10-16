@@ -6,7 +6,7 @@ class U {
     companion object {
         fun UUID() = UUID.randomUUID().toString()
         fun minUUID() = UUID().replace("-", "")
-        val snowFlakeContainer: IdGenerator by lazy {
+        val idGenerator: IdGenerator by lazy {
             return@lazy IdGenerator()
         }
     }
