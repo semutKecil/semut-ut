@@ -7,16 +7,21 @@ class U {
         fun UUID() = UUID.randomUUID().toString()
         fun minUUID() = UUID().replace("-", "")
         val snowFlakeContainer: IdGenerator by lazy {
-            return@lazy DefaultIdGenerator()
+            return@lazy IdGenerator()
         }
     }
 }
 
-interface IdGenerator {
-    fun generateId():Long
+class IdGenerator {
+    var idGeneratorFormula: IdGeneratorFormula = DefaultIdGeneratorFormula()
+    fun nextId() = idGeneratorFormula.nextId()
 }
 
-class DefaultIdGenerator:IdGenerator{
-    val snowFlake = SnowFlake(1,1,System.currentTimeMillis())
-    override fun generateId() = snowFlake.nextId()
+interface IdGeneratorFormula {
+    fun nextId(): Long
+}
+
+class DefaultIdGeneratorFormula : IdGeneratorFormula {
+    val snowFlake = SnowFlake(1, 1, System.currentTimeMillis())
+    override fun nextId() = snowFlake.nextId()
 }
