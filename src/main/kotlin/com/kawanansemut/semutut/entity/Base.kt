@@ -3,7 +3,6 @@ package com.kawanansemut.semutut.entity
 import java.io.Serializable
 import java.time.LocalDateTime
 import com.kawanansemut.semutut.utility.U
-import org.hibernate.annotations.NaturalId
 import javax.persistence.*
 
 
