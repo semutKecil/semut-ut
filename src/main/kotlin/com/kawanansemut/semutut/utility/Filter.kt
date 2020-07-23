@@ -122,10 +122,9 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
                         else -> cb.notEqual(root.get<Any>(fd.fi), fd.v)
                     }
                 }
-            else if(fd.o == FILTEROP.LIKE){
+            else if (fd.o == FILTEROP.LIKE) {
                 cb.like(cb.lower(root.get<String>(fd.fi).`as`(String::class.java)), fd.v!!.toLowerCase())
-            }
-            else {
+            } else {
                 when (field.type) {
                     Int::class.java -> PredicateNumber<Int, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toInt(), cb, root).build()
                     Float::class.java -> PredicateNumber<Float, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toFloat(), cb, root).build()
@@ -168,5 +167,29 @@ class FilterData : Serializable {
     fun toJson(): String {
         val jsonMapper = jacksonObjectMapper()
         return jsonMapper.writeValueAsString(this)
+    }
+
+    fun <T>toPredicate(root: Root<T>, cq: CriteriaQuery<*>, cb: CriteriaBuilder, cls:Class<T>): Predicate? {
+        return FilterDataBuilder(this, cls).buildPredicate(root, cq, cb)
+    }
+
+    companion object {
+        fun filter(field: String, operator: FILTEROP, value: String): FilterData {
+            val fd = FilterData()
+            fd.f = arrayOf(field, operator.name, value)
+            return fd
+        }
+
+        fun and(vararg filterData: FilterData): FilterData {
+            val fd = FilterData()
+            fd.and = filterData.map { it }.toTypedArray()
+            return fd
+        }
+
+        fun or(vararg filterData: FilterData): FilterData {
+            val fd = FilterData()
+            fd.or = filterData.map { it }.toTypedArray()
+            return fd
+        }
     }
 }
