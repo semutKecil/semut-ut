@@ -159,11 +159,6 @@ class FilterData : Serializable {
     var and: Array<FilterData>? = null
     var or: Array<FilterData>? = null
 
-    fun fromJson(json: String): FilterData {
-        val jsonMapper = jacksonObjectMapper()
-        return jsonMapper.readValue(json)
-    }
-
     fun toJson(): String {
         val jsonMapper = jacksonObjectMapper()
         return jsonMapper.writeValueAsString(this)
@@ -174,6 +169,11 @@ class FilterData : Serializable {
     }
 
     companion object {
+        fun fromJson(json: String): FilterData {
+            val jsonMapper = jacksonObjectMapper()
+            return jsonMapper.readValue(json)
+        }
+
         fun filter(field: String, operator: FILTEROP, value: String): FilterData {
             val fd = FilterData()
             fd.f = arrayOf(field, operator.name, value)
