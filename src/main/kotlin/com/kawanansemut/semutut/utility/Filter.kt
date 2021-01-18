@@ -91,6 +91,7 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
                 val tVal = (stv[0] * 3600) + (stv[1] * 60) + stv[2]
                 PredicateNumber(intTimeExp, fd.o!!, tVal, cb, root).build()
             }
+
             FILTEROP.ISNULL -> cb.isNull(root.get<LocalDateTime>(fd.fi))
             FILTEROP.ISNOTNULL -> cb.isNotNull(root.get<LocalDateTime>(fd.fi))
             else -> null
@@ -101,49 +102,56 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
 
         val fields = cob.declaredFields.toMutableList()
         fields.addAll(cob.superclass.declaredFields.toMutableList())
-        var predicate: Predicate? = null
+        val predicate: Predicate?
 
         if (fd.fi != null && fd.o != null && fd.v != null && fields.any { it.name == fd.fi }) {
             val field = fields.first { it.name == fd.fi }
 
-            predicate = if (fd.o == FILTEROP.EQ) {
-                if (field.type.isEnum) {
-                    cb.equal(root.get<Enum<*>>(fd.fi), field.type.enumConstants.first { any -> any.toString() == fd.v!! })
-                } else {
-                    when (field.type) {
-                        Boolean::class.java -> cb.equal(root.get<Boolean>(fd.fi), fd.v!!.toBoolean())
-                        LocalDateTime::class.java -> cb.equal(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
-                        String::class.java -> cb.equal(cb.lower(root.get<String>(fd.fi)), fd.v!!.toLowerCase())
-                        else -> cb.equal(root.get<Any>(fd.fi), fd.v)
+            predicate =  when(fd.o){
+                FILTEROP.EQ -> {
+                    if (field.type.isEnum) {
+                        cb.equal(root.get<Enum<*>>(fd.fi), field.type.enumConstants.first { any -> any.toString() == fd.v!! })
+                    } else {
+                        when (field.type) {
+                            Boolean::class.java -> cb.equal(root.get<Boolean>(fd.fi), fd.v!!.toBoolean())
+                            LocalDateTime::class.java -> cb.equal(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
+                            String::class.java -> cb.equal(cb.lower(root.get<String>(fd.fi)), fd.v!!.toLowerCase())
+                            else -> cb.equal(root.get<Any>(fd.fi), fd.v)
+                        }
                     }
                 }
-            } else if (fd.o == FILTEROP.NEQ)
-                if (field.type.isEnum) {
-                    cb.notEqual(root.get<Enum<*>>(fd.fi), field.type.enumConstants.first { any -> any.toString() == fd.v!! })
-                } else {
-                    when (field.type) {
-                        Boolean::class.java -> cb.notEqual(root.get<Boolean>(fd.fi), fd.v!!.toBoolean())
-                        LocalDateTime::class.java -> cb.notEqual(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
-                        String::class.java -> cb.notEqual(cb.lower(root.get<String>(fd.fi)), fd.v!!.toLowerCase())
-                        else -> cb.notEqual(root.get<Any>(fd.fi), fd.v)
+                FILTEROP.NEQ -> {
+                    if (field.type.isEnum) {
+                        cb.notEqual(root.get<Enum<*>>(fd.fi), field.type.enumConstants.first { any -> any.toString() == fd.v!! })
+                    } else {
+                        when (field.type) {
+                            Boolean::class.java -> cb.notEqual(root.get<Boolean>(fd.fi), fd.v!!.toBoolean())
+                            LocalDateTime::class.java -> cb.notEqual(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
+                            String::class.java -> cb.notEqual(cb.lower(root.get<String>(fd.fi)), fd.v!!.toLowerCase())
+                            else -> cb.notEqual(root.get<Any>(fd.fi), fd.v)
+                        }
                     }
                 }
-            else if (fd.o == FILTEROP.LIKE) {
-                cb.like(cb.lower(root.get<String>(fd.fi).`as`(String::class.java)), fd.v!!.toLowerCase())
-            } else {
-                when (field.type) {
-                    Int::class.java -> PredicateNumber<Int, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toInt(), cb, root).build()
-                    Float::class.java -> PredicateNumber<Float, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toFloat(), cb, root).build()
-                    Long::class.java -> PredicateNumber<Long, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toLong(), cb, root).build()
-                    Double::class.java -> PredicateNumber<Double, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toDouble(), cb, root).build()
-                    LocalDateTime::class.java -> buildLocalDatetimePredicate(fd, root, cb)
-                    else -> null
+                FILTEROP.LIKE -> cb.like(cb.lower(root.get<String>(fd.fi).`as`(String::class.java)), fd.v!!.toLowerCase())
+                FILTEROP.ISNULL -> cb.isNull(root.get<Any>(fd.fi))
+                FILTEROP.ISNOTNULL -> cb.isNotNull(root.get<Any>(fd.fi))
+                else -> {
+                    when (field.type) {
+                        Int::class.java -> PredicateNumber<Int, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toInt(), cb, root).build()
+                        Float::class.java -> PredicateNumber<Float, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toFloat(), cb, root).build()
+                        Long::class.java -> PredicateNumber<Long, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toLong(), cb, root).build()
+                        Double::class.java -> PredicateNumber<Double, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toDouble(), cb, root).build()
+                        LocalDateTime::class.java -> buildLocalDatetimePredicate(fd, root, cb)
+                        else -> null
+                    }
                 }
             }
         } else if (fd.and != null && fd.and!!.isNotEmpty()) {
             predicate = cb.and(*this.fd.and!!.mapNotNull { FilterDataBuilder(it, cob).buildPredicate(root, cq, cb) }.toTypedArray())
         } else if (fd.or != null && fd.or!!.isNotEmpty()) {
             predicate = cb.or(*this.fd.or!!.mapNotNull { FilterDataBuilder(it, cob).buildPredicate(root, cq, cb) }.toTypedArray())
+        }else{
+            throw Exception("operator not recognized - field ${fd.fi} operator ${fd.o} value ${fd.v}")
         }
         return predicate
     }
