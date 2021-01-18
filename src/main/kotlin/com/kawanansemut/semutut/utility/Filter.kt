@@ -26,7 +26,9 @@ enum class FILTEROP {
     GED,
     GET,
     LED,
-    LET
+    LET,
+    ISNULL,
+    ISNOTNULL
 }
 
 class PredicateNumber<T : Number, X>(private val field: Expression<T>, private val operator: FILTEROP, private val v: T, private val cb: CriteriaBuilder, private val root: Root<X>) {
@@ -39,6 +41,8 @@ class PredicateNumber<T : Number, X>(private val field: Expression<T>, private v
             FILTEROP.LE, FILTEROP.LED, FILTEROP.LET -> cb.le(field, v)
             FILTEROP.EQ, FILTEROP.EQD, FILTEROP.EQT -> cb.equal(field, v)
             FILTEROP.NEQ, FILTEROP.NEQD, FILTEROP.NEQT -> cb.notEqual(field, v)
+            FILTEROP.ISNULL -> cb.isNull(field)
+            FILTEROP.ISNOTNULL -> cb.isNotNull(field)
             else -> null
         }
     }
@@ -87,6 +91,8 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
                 val tVal = (stv[0] * 3600) + (stv[1] * 60) + stv[2]
                 PredicateNumber(intTimeExp, fd.o!!, tVal, cb, root).build()
             }
+            FILTEROP.ISNULL -> cb.isNull(root.get<LocalDateTime>(fd.fi))
+            FILTEROP.ISNOTNULL -> cb.isNotNull(root.get<LocalDateTime>(fd.fi))
             else -> null
         }
     }
@@ -164,7 +170,7 @@ class FilterData : Serializable {
         return jsonMapper.writeValueAsString(this)
     }
 
-    fun <T>toPredicate(root: Root<T>, cq: CriteriaQuery<*>, cb: CriteriaBuilder, cls:Class<T>): Predicate? {
+    fun <T> toPredicate(root: Root<T>, cq: CriteriaQuery<*>, cb: CriteriaBuilder, cls: Class<T>): Predicate? {
         return FilterDataBuilder(this, cls).buildPredicate(root, cq, cb)
     }
 
