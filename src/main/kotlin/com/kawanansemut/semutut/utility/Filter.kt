@@ -150,9 +150,8 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
             predicate = cb.and(*this.fd.and!!.mapNotNull { FilterDataBuilder(it, cob).buildPredicate(root, cq, cb) }.toTypedArray())
         } else if (fd.or != null && fd.or!!.isNotEmpty()) {
             predicate = cb.or(*this.fd.or!!.mapNotNull { FilterDataBuilder(it, cob).buildPredicate(root, cq, cb) }.toTypedArray())
-        }else{
-            throw Exception("operator not recognized - field ${fd.fi} operator ${fd.o} value ${fd.v}")
         }
+        
         return predicate
     }
 }
