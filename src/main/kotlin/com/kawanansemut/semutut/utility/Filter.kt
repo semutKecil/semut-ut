@@ -102,12 +102,11 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
 
         val fields = cob.declaredFields.toMutableList()
         fields.addAll(cob.superclass.declaredFields.toMutableList())
-        val predicate: Predicate?
 
-        if (fd.fi != null && fd.o != null && fd.v != null && fields.any { it.name == fd.fi }) {
+        return if (fd.fi != null && fd.o != null && fd.v != null && fields.any { it.name == fd.fi }) {
             val field = fields.first { it.name == fd.fi }
 
-            predicate =  when(fd.o){
+            when (fd.o) {
                 FILTEROP.EQ -> {
                     if (field.type.isEnum) {
                         cb.equal(root.get<Enum<*>>(fd.fi), field.type.enumConstants.first { any -> any.toString() == fd.v!! })
@@ -147,14 +146,12 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
                 }
             }
         } else if (fd.and != null && fd.and!!.isNotEmpty()) {
-            predicate = cb.and(*this.fd.and!!.mapNotNull { FilterDataBuilder(it, cob).buildPredicate(root, cq, cb) }.toTypedArray())
+            cb.and(*this.fd.and!!.mapNotNull { FilterDataBuilder(it, cob).buildPredicate(root, cq, cb) }.toTypedArray())
         } else if (fd.or != null && fd.or!!.isNotEmpty()) {
-            predicate = cb.or(*this.fd.or!!.mapNotNull { FilterDataBuilder(it, cob).buildPredicate(root, cq, cb) }.toTypedArray())
+            cb.or(*this.fd.or!!.mapNotNull { FilterDataBuilder(it, cob).buildPredicate(root, cq, cb) }.toTypedArray())
         } else {
-            predicate = null
+            null
         }
-        
-        return predicate
     }
 }
 
