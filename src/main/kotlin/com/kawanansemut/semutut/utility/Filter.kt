@@ -28,10 +28,18 @@ enum class FILTEROP {
     LED,
     LET,
     ISNULL,
-    ISNOTNULL
+    ISNOTNULL,
+    IN,
+    NOTIN,
 }
 
-class PredicateNumber<T : Number, X>(private val field: Expression<T>, private val operator: FILTEROP, private val v: T, private val cb: CriteriaBuilder, private val root: Root<X>) {
+class PredicateNumber<T : Number, X>(
+    private val field: Expression<T>,
+    private val operator: FILTEROP,
+    private val v: T,
+    private val cb: CriteriaBuilder,
+    private val root: Root<X>
+) {
 
     fun build(): Predicate? {
         return when (operator) {
@@ -66,24 +74,40 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
         Expression<Integer> second = cb.function("second", Integer.class, ts);
          */
 
-        val intDateExp = cb.sum(cb.sum(cb.prod(cb.function("year", Integer::class.java, root.get<LocalDateTime>(fd.fi)), 10000), cb.prod(cb.function("month", Integer::class.java, root.get<LocalDateTime>(fd.fi)), 100)), cb.function("day", Integer::class.java, root.get<LocalDateTime>(fd.fi)))
+        val intDateExp = cb.sum(
+            cb.sum(
+                cb.prod(cb.function("year", Integer::class.java, root.get<LocalDateTime>(fd.fi)), 10000),
+                cb.prod(cb.function("month", Integer::class.java, root.get<LocalDateTime>(fd.fi)), 100)
+            ), cb.function("day", Integer::class.java, root.get<LocalDateTime>(fd.fi))
+        )
         val intTimeExp = cb.sum(
-                cb.sum(cb.prod(cb.function("hour", Integer::class.java, root.get<LocalDateTime>(fd.fi)), 3600),
-                        cb.prod(cb.function("minute", Integer::class.java, root.get<LocalDateTime>(fd.fi)), 60)
-                ),
-                cb.function("second", Integer::class.java, root.get<LocalDateTime>(fd.fi)))
+            cb.sum(
+                cb.prod(cb.function("hour", Integer::class.java, root.get<LocalDateTime>(fd.fi)), 3600),
+                cb.prod(cb.function("minute", Integer::class.java, root.get<LocalDateTime>(fd.fi)), 60)
+            ),
+            cb.function("second", Integer::class.java, root.get<LocalDateTime>(fd.fi))
+        )
 
 
 
         return when (fd.o!!) {
             FILTEROP.EQ -> cb.equal(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
             FILTEROP.NEQ -> cb.notEqual(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
-            FILTEROP.GT -> cb.greaterThan(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
+            FILTEROP.GT -> cb.greaterThan(
+                root.get<LocalDateTime>(fd.fi),
+                LocalDateTime.parse(fd.v!!, dateTimeFormatter)
+            )
             FILTEROP.LT -> cb.lessThan(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
-            FILTEROP.GE -> cb.greaterThanOrEqualTo(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
-            FILTEROP.LE -> cb.lessThanOrEqualTo(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
+            FILTEROP.GE -> cb.greaterThanOrEqualTo(
+                root.get<LocalDateTime>(fd.fi),
+                LocalDateTime.parse(fd.v!!, dateTimeFormatter)
+            )
+            FILTEROP.LE -> cb.lessThanOrEqualTo(
+                root.get<LocalDateTime>(fd.fi),
+                LocalDateTime.parse(fd.v!!, dateTimeFormatter)
+            )
             FILTEROP.EQD, FILTEROP.LED, FILTEROP.GED, FILTEROP.LTD, FILTEROP.GTD, FILTEROP.NEQD -> PredicateNumber(
-                    intDateExp, fd.o!!, fd.v!!.replace("-", "").toInt(), cb, root
+                intDateExp, fd.o!!, fd.v!!.replace("-", "").toInt(), cb, root
             ).build()
 
             FILTEROP.EQT, FILTEROP.LET, FILTEROP.GET, FILTEROP.LTT, FILTEROP.GTT, FILTEROP.NEQT -> {
@@ -109,11 +133,16 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
             when (fd.o) {
                 FILTEROP.EQ -> {
                     if (field.type.isEnum) {
-                        cb.equal(root.get<Enum<*>>(fd.fi), field.type.enumConstants.first { any -> any.toString() == fd.v!! })
+                        cb.equal(
+                            root.get<Enum<*>>(fd.fi),
+                            field.type.enumConstants.first { any -> any.toString() == fd.v!! })
                     } else {
                         when (field.type) {
                             Boolean::class.java -> cb.equal(root.get<Boolean>(fd.fi), fd.v!!.toBoolean())
-                            LocalDateTime::class.java -> cb.equal(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
+                            LocalDateTime::class.java -> cb.equal(
+                                root.get<LocalDateTime>(fd.fi),
+                                LocalDateTime.parse(fd.v!!, dateTimeFormatter)
+                            )
                             String::class.java -> cb.equal(cb.lower(root.get<String>(fd.fi)), fd.v!!.toLowerCase())
                             else -> cb.equal(root.get<Any>(fd.fi), fd.v)
                         }
@@ -121,25 +150,65 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
                 }
                 FILTEROP.NEQ -> {
                     if (field.type.isEnum) {
-                        cb.notEqual(root.get<Enum<*>>(fd.fi), field.type.enumConstants.first { any -> any.toString() == fd.v!! })
+                        cb.notEqual(
+                            root.get<Enum<*>>(fd.fi),
+                            field.type.enumConstants.first { any -> any.toString() == fd.v!! })
                     } else {
                         when (field.type) {
                             Boolean::class.java -> cb.notEqual(root.get<Boolean>(fd.fi), fd.v!!.toBoolean())
-                            LocalDateTime::class.java -> cb.notEqual(root.get<LocalDateTime>(fd.fi), LocalDateTime.parse(fd.v!!, dateTimeFormatter))
+                            LocalDateTime::class.java -> cb.notEqual(
+                                root.get<LocalDateTime>(fd.fi),
+                                LocalDateTime.parse(fd.v!!, dateTimeFormatter)
+                            )
                             String::class.java -> cb.notEqual(cb.lower(root.get<String>(fd.fi)), fd.v!!.toLowerCase())
                             else -> cb.notEqual(root.get<Any>(fd.fi), fd.v)
                         }
                     }
                 }
-                FILTEROP.LIKE -> cb.like(cb.lower(root.get<String>(fd.fi).`as`(String::class.java)), fd.v!!.toLowerCase())
+                FILTEROP.LIKE -> cb.like(
+                    cb.lower(root.get<String>(fd.fi).`as`(String::class.java)),
+                    fd.v!!.toLowerCase()
+                )
                 FILTEROP.ISNULL -> cb.isNull(root.get<Any>(fd.fi))
                 FILTEROP.ISNOTNULL -> cb.isNotNull(root.get<Any>(fd.fi))
+                FILTEROP.IN -> {
+                    val predicate = root.get<String>(fd.fi).`in`(fd.vAr)
+                    cb.`in`(predicate)
+                }
+                FILTEROP.NOTIN -> {
+                    val predicate = root.get<String>(fd.fi).`in`(fd.vAr)
+                    cb.not(predicate)
+                }
                 else -> {
                     when (field.type) {
-                        Int::class.java -> PredicateNumber<Int, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toInt(), cb, root).build()
-                        Float::class.java -> PredicateNumber<Float, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toFloat(), cb, root).build()
-                        Long::class.java -> PredicateNumber<Long, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toLong(), cb, root).build()
-                        Double::class.java -> PredicateNumber<Double, T>(root.get(fd.fi!!), fd.o!!, fd.v!!.toDouble(), cb, root).build()
+                        Int::class.java -> PredicateNumber<Int, T>(
+                            root.get(fd.fi!!),
+                            fd.o!!,
+                            fd.v!!.toInt(),
+                            cb,
+                            root
+                        ).build()
+                        Float::class.java -> PredicateNumber<Float, T>(
+                            root.get(fd.fi!!),
+                            fd.o!!,
+                            fd.v!!.toFloat(),
+                            cb,
+                            root
+                        ).build()
+                        Long::class.java -> PredicateNumber<Long, T>(
+                            root.get(fd.fi!!),
+                            fd.o!!,
+                            fd.v!!.toLong(),
+                            cb,
+                            root
+                        ).build()
+                        Double::class.java -> PredicateNumber<Double, T>(
+                            root.get(fd.fi!!),
+                            fd.o!!,
+                            fd.v!!.toDouble(),
+                            cb,
+                            root
+                        ).build()
                         LocalDateTime::class.java -> buildLocalDatetimePredicate(fd, root, cb)
                         else -> null
                     }
@@ -158,6 +227,8 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
 class FilterData : Serializable {
     var fi: String? = null
     var v: String? = null
+
+    var vAr: Array<String>? = null
     var o: FILTEROP? = null
     var f: Array<String>? = null
         set(value) {
@@ -165,6 +236,19 @@ class FilterData : Serializable {
                 this.fi = value[0]
                 this.o = FILTEROP.valueOf(value[1])
                 this.v = value[2]
+
+                this.vAr = when {
+                    value.size == 3 -> {
+                        arrayOf(value[2])
+                    }
+                    value.size > 3 -> {
+                        val sliceArray = value.sliceArray(2 until value.size)
+                        sliceArray
+                    }
+                    else -> {
+                        null
+                    }
+                }
             }
             field = value
         }
@@ -186,9 +270,9 @@ class FilterData : Serializable {
             return jsonMapper.readValue(json)
         }
 
-        fun filter(field: String, operator: FILTEROP, value: String): FilterData {
+        fun filter(field: String, operator: FILTEROP, vararg value: String): FilterData {
             val fd = FilterData()
-            fd.f = arrayOf(field, operator.name, value)
+            fd.f = arrayOf(field, operator.name, *value)
             return fd
         }
 
