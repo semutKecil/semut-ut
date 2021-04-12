@@ -172,8 +172,7 @@ class FilterDataBuilder<T>(private val fd: FilterData, private val cob: Class<T>
                 FILTEROP.ISNULL -> cb.isNull(root.get<Any>(fd.fi))
                 FILTEROP.ISNOTNULL -> cb.isNotNull(root.get<Any>(fd.fi))
                 FILTEROP.IN -> {
-                    val predicate = root.get<String>(fd.fi).`in`(fd.vAr)
-                    cb.`in`(predicate)
+                    root.get<String>(fd.fi).`in`(fd.vAr)
                 }
                 FILTEROP.NOTIN -> {
                     val predicate = root.get<String>(fd.fi).`in`(fd.vAr)
