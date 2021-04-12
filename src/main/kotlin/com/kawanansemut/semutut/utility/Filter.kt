@@ -232,7 +232,7 @@ class FilterData : Serializable {
     var o: FILTEROP? = null
     var f: Array<String>? = null
         set(value) {
-            if (value != null && value.size == 3) {
+            if (value != null && value.size >= 3) {
                 this.fi = value[0]
                 this.o = FILTEROP.valueOf(value[1])
                 this.v = value[2]
